@@ -618,7 +618,10 @@ if(NOT CURL_DISABLE_LDAPS)
 endif()
 
 # Check for idn
-check_library_exists_concat("idn2" idn2_lookup_ul HAVE_LIBIDN2)
+option(CURL_WITHOUT_IDN2 "Without libidn2" OFF)
+if(NOT CURL_WITHOUT_IDN2)
+  check_library_exists_concat("idn2" idn2_lookup_ul HAVE_LIBIDN2)
+endif()
 
 # Check for symbol dlopen (same as HAVE_LIBDL)
 check_library_exists("${CURL_LIBS}" dlopen "" HAVE_DLOPEN)
@@ -626,7 +629,12 @@ check_library_exists("${CURL_LIBS}" dlopen "" HAVE_DLOPEN)
 set(HAVE_LIBZ OFF)
 set(HAVE_ZLIB_H OFF)
 set(USE_ZLIB OFF)
-optional_dependency(ZLIB)
+
+option(CURL_WITHOUT_ZLIB "Without zlib" OFF)
+if(NOT CURL_WITHOUT_ZLIB)
+  optional_dependency(ZLIB)
+endif()
+
 if(ZLIB_FOUND)
   set(HAVE_ZLIB_H ON)
   set(HAVE_LIBZ ON)
