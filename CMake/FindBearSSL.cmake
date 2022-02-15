@@ -19,7 +19,7 @@
 # KIND, either express or implied.
 #
 ###########################################################################
-find_path(BEARSSL_INCLUDE_DIRS bearssl.h)
+find_path(BEARSSL_INCLUDE_DIRS NAMES bearssl.h PATH_SUFFIXES bearssl)
 
 find_library(BEARSSL_LIBRARY bearssl)
 
