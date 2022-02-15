@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -34,7 +34,6 @@
 #define DEBUG_ME 0
 
 #include "urldata.h"
-#include "non-ascii.h"
 #include "sendf.h"
 #include "curl_ntlm_core.h"
 #include "curl_gethostname.h"
@@ -182,7 +181,7 @@ static CURLcode ntlm_decode_type2_target(struct Curl_easy *data,
          (target_info_offset + target_info_len) > type2len ||
          target_info_offset < 48) {
         infof(data, "NTLM handshake failure (bad type-2 message). "
-              "Target Info Offset Len is set incorrect by the peer\n");
+              "Target Info Offset Len is set incorrect by the peer");
         return CURLE_BAD_CONTENT_ENCODING;
       }
 
@@ -286,7 +285,7 @@ CURLcode Curl_auth_decode_ntlm_type2_message(struct Curl_easy *data,
      (memcmp(type2, NTLMSSP_SIGNATURE, 8) != 0) ||
      (memcmp(type2 + 8, type2_marker, sizeof(type2_marker)) != 0)) {
     /* This was not a good enough type-2 message */
-    infof(data, "NTLM handshake failure (bad type-2 message)\n");
+    infof(data, "NTLM handshake failure (bad type-2 message)");
     return CURLE_BAD_CONTENT_ENCODING;
   }
 
@@ -296,7 +295,7 @@ CURLcode Curl_auth_decode_ntlm_type2_message(struct Curl_easy *data,
   if(ntlm->flags & NTLMFLAG_NEGOTIATE_TARGET_INFO) {
     result = ntlm_decode_type2_target(data, type2ref, ntlm);
     if(result) {
-      infof(data, "NTLM handshake failure (bad type-2 message)\n");
+      infof(data, "NTLM handshake failure (bad type-2 message)");
       return result;
     }
   }
@@ -533,7 +532,7 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
   /* Get the machine's un-qualified host name as NTLM doesn't like the fully
      qualified domain name */
   if(Curl_gethostname(host, sizeof(host))) {
-    infof(data, "gethostname() failed, continuing without!\n");
+    infof(data, "gethostname() failed, continuing without!");
     hostlen = 0;
   }
   else {
@@ -558,7 +557,7 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
     if(result)
       return result;
 
-    result = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
+    result = Curl_ntlm_core_mk_nt_hash(passwdp, ntbuffer);
     if(result)
       return result;
 
@@ -603,7 +602,9 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
     memcpy(tmp, &ntlm->nonce[0], 8);
     memcpy(tmp + 8, entropy, 8);
 
-    Curl_md5it(md5sum, tmp, 16);
+    result = Curl_md5it(md5sum, tmp, 16);
+    if(result)
+      return result;
 
     /* We shall only use the first 8 bytes of md5sum, but the des code in
        Curl_ntlm_core_lm_resp only encrypt the first 8 bytes */
@@ -631,14 +632,14 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
     /* NTLM version 1 */
 
 #ifdef USE_NTRESPONSES
-    result = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
+    result = Curl_ntlm_core_mk_nt_hash(passwdp, ntbuffer);
     if(result)
       return result;
 
     Curl_ntlm_core_lm_resp(ntbuffer, &ntlm->nonce[0], ntresp);
 #endif
 
-    result = Curl_ntlm_core_mk_lm_hash(data, passwdp, lmbuffer);
+    result = Curl_ntlm_core_mk_lm_hash(passwdp, lmbuffer);
     if(result)
       return result;
 
@@ -820,12 +821,6 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
     memcpy(&ntlmbuf[size], host, hostlen);
 
   size += hostlen;
-
-  /* Convert domain, user, and host to ASCII but leave the rest as-is */
-  result = Curl_convert_to_network(data, (char *)&ntlmbuf[domoff],
-                                   size - domoff);
-  if(result)
-    return CURLE_CONV_FAILED;
 
   /* Return the binary blob. */
   result = Curl_bufref_memdup(out, ntlmbuf, size);

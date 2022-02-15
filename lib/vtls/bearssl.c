@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2019 - 2021, Michael Forney, <mforney@mforney.org>
+ * Copyright (C) 2019 - 2022, Michael Forney, <mforney@mforney.org>
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -465,6 +465,14 @@ static CURLcode bearssl_connect_step1(struct Curl_easy *data,
     }
     hostname = NULL;
   }
+  else {
+    char *snihost = Curl_ssl_snihost(data, hostname, NULL);
+    if(!snihost) {
+      failf(data, "Failed to set SNI");
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+    hostname = snihost;
+  }
 
   if(!br_ssl_client_reset(&backend->ctx, hostname, 0))
     return CURLE_FAILED_INIT;
@@ -608,6 +616,7 @@ static CURLcode bearssl_connect_step3(struct Curl_easy *data,
 
   if(SSL_SET_OPTION(primary.sessionid)) {
     bool incache;
+    bool added = FALSE;
     void *oldsession;
     br_ssl_session_parameters *session;
 
@@ -623,10 +632,11 @@ static CURLcode bearssl_connect_step3(struct Curl_easy *data,
       Curl_ssl_delsessionid(data, oldsession);
     ret = Curl_ssl_addsessionid(data, conn,
                                 SSL_IS_PROXY() ? TRUE : FALSE,
-                                session, 0, sockindex);
+                                session, 0, sockindex, &added);
     Curl_ssl_sessionid_unlock(data);
-    if(ret) {
+    if(!added)
       free(session);
+    if(ret) {
       return CURLE_OUT_OF_MEMORY;
     }
   }
