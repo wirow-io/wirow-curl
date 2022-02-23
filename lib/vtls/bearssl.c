@@ -23,7 +23,7 @@
 
 #ifdef USE_BEARSSL
 
-#include <bearssl.h>
+#include <iwnet/bearssl.h>
 
 #include "bearssl.h"
 #include "urldata.h"

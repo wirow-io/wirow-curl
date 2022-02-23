@@ -19,9 +19,8 @@
 # KIND, either express or implied.
 #
 ###########################################################################
-find_path(BEARSSL_INCLUDE_DIRS NAMES bearssl.h PATH_SUFFIXES bearssl)
-
-find_library(BEARSSL_LIBRARY bearssl)
+find_path(BEARSSL_INCLUDE_DIRS NAMES iwnet/bearssl.h PATH_SUFFIXES ejdb2)
+find_library(BEARSSL_LIBRARY NAMES libiwnet-1.a)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(BearSSL DEFAULT_MSG
