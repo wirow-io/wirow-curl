@@ -108,7 +108,6 @@ problems may have been fixed or changed somewhat since this was written.
  11.3 Disconnects do not do verbose
  11.4 HTTP test server 'connection-monitor' problems
  11.5 Connection information when using TCP Fast Open
- 11.6 slow connect to localhost on Windows
  11.7 signal-based resolver timeouts
  11.8 DoH leaks memory after followlocation
  11.9 DoH does not inherit all transfer options
@@ -149,7 +148,6 @@ problems may have been fixed or changed somewhat since this was written.
  15.13 CMake build with MIT Kerberos does not work
 
  16. Applications
- 16.1 pulseUI VPN client
 
  17. HTTP/2
  17.1 Excessive HTTP/2 packets with TCP_NODELAY
@@ -160,12 +158,6 @@ problems may have been fixed or changed somewhat since this was written.
 
  18. HTTP/3
  18.1 If the HTTP/3 server closes connection during upload curl hangs
- 18.2 Uploading HTTP/3 files gets interrupted at certain file sizes
- 18.3 HTTP/3 download is 5x times slower than HTTP/2
- 18.4 Downloading with HTTP/3 produces broken files
- 18.5 HTTP/3 download with quiche halts after a while
- 18.6 HTTP/3 multipart POST with quiche fails
- 18.7 HTTP/3 quiche upload large file fails
  18.8 HTTP/3 does not support client certs
  18.9 connection migration does not work
 
@@ -852,20 +844,6 @@ problems may have been fixed or changed somewhat since this was written.
  See https://github.com/curl/curl/issues/1332 and
  https://github.com/curl/curl/issues/4296
 
-11.6 slow connect to localhost on Windows
-
- When connecting to "localhost" on Windows, curl will resolve the name for
- both ipv4 and ipv6 and try to connect to both happy eyeballs-style. Something
- in there does however make it take 200 milliseconds to succeed - which is the
- HAPPY_EYEBALLS_TIMEOUT define exactly. Lowering that define speeds up the
- connection, suggesting a problem in the HE handling.
-
- If we can *know* that we are talking to a local host, we should lower the
- happy eyeballs delay timeout for IPv6 (related: hardcode the "localhost"
- addresses, mentioned in TODO). Possibly we should reduce that delay for all.
-
- https://github.com/curl/curl/issues/2281
-
 11.7 signal-based resolver timeouts
 
  libcurl built without an asynchronous resolver library uses alarm() to time
@@ -1098,19 +1076,6 @@ problems may have been fixed or changed somewhat since this was written.
 
 16. Applications
 
-16.1 pulseUI VPN client
-
- This application crashes at startup with libcurl 7.74.0 (and presumably later
- versions too) after we cleaned up OpenSSL initialization. Since this is the
- only known application to do this, we suspect it is related to something they
- are doing in their setup that is not kosher. We have not been able to get in
- contact with them nor got any technical details to help us debug this
- further.
-
- See
- https://community.pulsesecure.net/t5/Pulse-Desktop-Clients/Linux-Pulse-Client-does-not-work-with-curl-7-74/m-p/44378
- and https://github.com/curl/curl/issues/6306
-
 17. HTTP/2
 
 17.1 Excessive HTTP/2 packets with TCP_NODELAY
@@ -1153,30 +1118,6 @@ problems may have been fixed or changed somewhat since this was written.
 18.1 If the HTTP/3 server closes connection during upload curl hangs
 
  See https://github.com/curl/curl/issues/6606
-
-18.2 Uploading HTTP/3 files gets interrupted at certain file sizes
-
- See https://github.com/curl/curl/issues/6510
-
-18.3 HTTP/3 download is 5x times slower than HTTP/2
-
- See https://github.com/curl/curl/issues/6494
-
-18.4 Downloading with HTTP/3 produces broken files
-
- See https://github.com/curl/curl/issues/7351
-
-18.5 HTTP/3 download with quiche halts after a while
-
- See https://github.com/curl/curl/issues/7339
-
-18.6 HTTP/3 multipart POST with quiche fails
-
- https://github.com/curl/curl/issues/7125
-
-18.7 HTTP/3 quiche upload large file fails
-
- https://github.com/curl/curl/issues/7532
 
 18.8 HTTP/3 does not support client certs
 

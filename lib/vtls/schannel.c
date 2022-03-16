@@ -325,13 +325,15 @@ get_alg_id_by_name(char *name)
   return 0;
 }
 
+#define NUM_CIPHERS 47 /* There are 47 options listed above */
+
 static CURLcode
 set_ssl_ciphers(SCHANNEL_CRED *schannel_cred, char *ciphers,
                 ALG_ID *algIds)
 {
   char *startCur = ciphers;
   int algCount = 0;
-  while(startCur && (0 != *startCur) && (algCount < NUMOF_CIPHERS)) {
+  while(startCur && (0 != *startCur) && (algCount < NUM_CIPHERS)) {
     long alg = strtol(startCur, 0, 0);
     if(!alg)
       alg = get_alg_id_by_name(startCur);
@@ -418,10 +420,13 @@ schannel_acquire_credential_handle(struct Curl_easy *data,
 {
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   SCHANNEL_CRED schannel_cred;
+  ALG_ID algIds[NUM_CIPHERS];
   PCCERT_CONTEXT client_certs[1] = { NULL };
   SECURITY_STATUS sspi_status = SEC_E_OK;
   CURLcode result;
   struct ssl_backend_data *backend = connssl->backend;
+
+  DEBUGASSERT(backend);
 
   /* setup Schannel API options */
   memset(&schannel_cred, 0, sizeof(schannel_cred));
@@ -502,7 +507,7 @@ schannel_acquire_credential_handle(struct Curl_easy *data,
 
   if(SSL_CONN_CONFIG(cipher_list)) {
     result = set_ssl_ciphers(&schannel_cred, SSL_CONN_CONFIG(cipher_list),
-                             backend->algIds);
+                             algIds);
     if(CURLE_OK != result) {
       failf(data, "Unable to set ciphers to passed via SSL_CONN_CONFIG");
       return result;
@@ -769,6 +774,8 @@ schannel_connect_step1(struct Curl_easy *data, struct connectdata *conn,
   char * const hostname = SSL_HOST_NAME();
   struct ssl_backend_data *backend = connssl->backend;
 
+  DEBUGASSERT(backend);
+
   DEBUGF(infof(data,
                "schannel: SSL/TLS connection with %s port %hu (step 1/3)",
                hostname, conn->remote_port));
@@ -1034,6 +1041,8 @@ schannel_connect_step2(struct Curl_easy *data, struct connectdata *conn,
   bool doread;
   const char *pubkey_ptr;
   struct ssl_backend_data *backend = connssl->backend;
+
+  DEBUGASSERT(backend);
 
   doread = (connssl->connecting_state != ssl_connect_2_writing) ? TRUE : FALSE;
 
@@ -1368,6 +1377,7 @@ schannel_connect_step3(struct Curl_easy *data, struct connectdata *conn,
   struct ssl_backend_data *backend = connssl->backend;
 
   DEBUGASSERT(ssl_connect_3 == connssl->connecting_state);
+  DEBUGASSERT(backend);
 
   DEBUGF(infof(data,
                "schannel: SSL/TLS connection with %s port %hu (step 3/3)",
@@ -1608,6 +1618,7 @@ schannel_connect_common(struct Curl_easy *data, struct connectdata *conn,
      */
     {
       struct ssl_backend_data *backend = connssl->backend;
+      DEBUGASSERT(backend);
       conn->sslContext = &backend->ctxt->ctxt_handle;
     }
 #endif
@@ -1637,6 +1648,8 @@ schannel_send(struct Curl_easy *data, int sockindex,
   SECURITY_STATUS sspi_status = SEC_E_OK;
   CURLcode result;
   struct ssl_backend_data *backend = connssl->backend;
+
+  DEBUGASSERT(backend);
 
   /* check if the maximum stream sizes were queried */
   if(backend->stream_sizes.cbMaximumMessage == 0) {
@@ -1785,6 +1798,8 @@ schannel_recv(struct Curl_easy *data, int sockindex,
      that it can hold all the bytes requested and some TLS record overhead. */
   size_t min_encdata_length = len + CURL_SCHANNEL_BUFFER_FREE_SIZE;
   struct ssl_backend_data *backend = connssl->backend;
+
+  DEBUGASSERT(backend);
 
   /****************************************************************************
    * Don't return or set backend->recv_unrecoverable_err unless in the cleanup.
@@ -2120,6 +2135,8 @@ static bool schannel_data_pending(const struct connectdata *conn,
   const struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   struct ssl_backend_data *backend = connssl->backend;
 
+  DEBUGASSERT(backend);
+
   if(connssl->use) /* SSL/TLS is in use */
     return (backend->decdata_offset > 0 ||
             (backend->encdata_offset > 0 && !backend->encdata_is_incomplete));
@@ -2156,6 +2173,7 @@ static int schannel_shutdown(struct Curl_easy *data, struct connectdata *conn,
   struct ssl_backend_data *backend = connssl->backend;
 
   DEBUGASSERT(data);
+  DEBUGASSERT(backend);
 
   if(connssl->use) {
     infof(data, "schannel: shutting down SSL/TLS connection with %s port %hu",
@@ -2306,6 +2324,8 @@ static CURLcode pkp_pin_peer_pubkey(struct Curl_easy *data,
   /* Result is returned to caller */
   CURLcode result = CURLE_SSL_PINNEDPUBKEYNOTMATCH;
 
+  DEBUGASSERT(backend);
+
   /* if a path wasn't specified, don't pin */
   if(!pinnedpubkey)
     return CURLE_OK;
@@ -2426,6 +2446,7 @@ static void *schannel_get_internals(struct ssl_connect_data *connssl,
 {
   struct ssl_backend_data *backend = connssl->backend;
   (void)info;
+  DEBUGASSERT(backend);
   return &backend->ctxt->ctxt_handle;
 }
 
